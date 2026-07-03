@@ -30,14 +30,14 @@
     color:var(--white);
     font-family:'Inter',sans-serif;
     overscroll-behavior-y:contain;
-    padding-bottom:110px;
+    padding-bottom:140px;
     -webkit-font-smoothing:antialiased;
   }
   h1,h2,h3,.display{font-family:'Bebas Neue',sans-serif; letter-spacing:0.5px;}
 
   /* ---------- HEADER / GAUGE ---------- */
   header{
-    padding:calc(22px + env(safe-area-inset-top)) 20px 18px;
+    padding:calc(48px + env(safe-area-inset-top)) 20px 22px;
     background:radial-gradient(120% 100% at 50% -10%, #1a1a1c 0%, var(--black) 70%);
     border-bottom:1px solid var(--line);
   }
@@ -79,13 +79,13 @@
   .daily-check:checked::after{content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; font-weight:800;}
 
   /* ---------- PROJECT OVERVIEW CARDS (painel) ---------- */
-  .projects{display:flex; flex-direction:column; gap:10px;}
+  .projects{display:flex; flex-direction:column; gap:16px;}
   .project-card{
     background:var(--panel);
     border:1px solid var(--line);
     border-left:3px solid var(--red);
     border-radius:10px;
-    padding:14px 14px 12px;
+    padding:18px 16px 16px;
   }
   .project-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
   .project-name{font-family:'Bebas Neue'; font-size:20px; letter-spacing:0.5px; line-height:1; cursor:pointer; border-bottom:1px dashed transparent;}
@@ -108,7 +108,7 @@
   /* ---------- TASK GROUPS (aba tarefas) ---------- */
   .task-group{
     background:var(--panel); border:1px solid var(--line); border-radius:10px;
-    padding:12px 14px; margin-bottom:10px;
+    padding:16px 16px; margin-bottom:16px;
   }
   .task-group-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px;}
   .task-group-title{font-family:'Bebas Neue'; font-size:17px; color:var(--red);}
@@ -143,7 +143,7 @@
   /* ---------- LEADS ---------- */
   .lead-card{
     background:var(--panel); border:1px solid var(--line); border-radius:10px;
-    padding:13px 14px; margin-bottom:8px;
+    padding:16px; margin-bottom:14px;
   }
   .lead-top{display:flex; align-items:center; gap:12px;}
   .lead-avatar{
