@@ -268,6 +268,16 @@
       <button onclick="const i=document.getElementById('newParallel'); addParallel(i.value); i.value='';">+</button>
     </div>
   </div>
+
+  <!-- CHECKLIST PERFEITO -->
+  <div class="view" id="view-checklist">
+    <div class="section-title">Checklist perfeito do dia</div>
+    <div class="task-group" id="habitList"></div>
+    <div class="add-task-row" style="margin-top:2px;">
+      <input id="newHabit" placeholder="Novo hábito..." onkeydown="if(event.key==='Enter'){addHabit(this.value); this.value='';}">
+      <button onclick="const i=document.getElementById('newHabit'); addHabit(i.value); i.value='';">+</button>
+    </div>
+  </div>
 </main>
 
 <nav class="bottom">
@@ -287,6 +297,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="#8d8d92" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
     Paralelos
   </button>
+  <button data-view="checklist" onclick="switchView('checklist')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#8d8d92" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M9 12l2 2 4-4"/></svg>
+    Checklist
+  </button>
 </nav>
 
 <script>
@@ -302,6 +316,16 @@ let state = {
     {id:'pp-1', t:'Slides da aula com Marcelo Bueno — fim de semana', done:false},
     {id:'pp-2', t:'Pós-graduação da FROMS — fim de semana', done:false},
     {id:'pp-3', t:'Sou eu nas Vendas — fim de semana', done:false}
+  ],
+  habitsDate: null,
+  habits: [
+    {id:'h1', t:'Acordar cedo', done:false},
+    {id:'h2', t:'Ler um capítulo de Provérbios', done:false},
+    {id:'h3', t:'Tomar água', done:false},
+    {id:'h4', t:'Treino / corrida do dia', done:false},
+    {id:'h5', t:'Revisar a agenda do dia', done:false},
+    {id:'h6', t:'Dieta carnívora', done:false},
+    {id:'h7', t:'Dormir 10 horas', done:false}
   ],
   projects: [
     { id:'mqv', name:'MQV', tag:'Marketing que Vende · empresa própria', metricLabel:'reuniões de venda / dia', metricGoal:2, mrr:0,
@@ -597,6 +621,37 @@ function addParallel(text){
   save(); render();
 }
 
+function resetHabitsIfNewDay(){
+  const today = new Date().toISOString().slice(0,10);
+  if(state.habitsDate !== today){
+    state.habits.forEach(h=>h.done=false);
+    state.habitsDate = today;
+  }
+}
+function renderHabits(){
+  resetHabitsIfNewDay();
+  const wrap = document.getElementById('habitList');
+  wrap.innerHTML = state.habits.map(h=>`
+    <div class="task-row ${h.done?'done':''}">
+      <input type="checkbox" ${h.done?'checked':''} onchange="toggleHabit('${h.id}')">
+      <span class="txt">${h.t}</span>
+      <span class="del" onclick="delHabit('${h.id}')">×</span>
+    </div>`).join('') || '<div class="empty">Nenhum hábito ainda.</div>';
+}
+function toggleHabit(id){
+  const h = state.habits.find(h=>h.id===id);
+  h.done = !h.done; save(); render();
+}
+function delHabit(id){
+  state.habits = state.habits.filter(h=>h.id!==id);
+  save(); render();
+}
+function addHabit(text){
+  if(!text || !text.trim()) return;
+  state.habits.push({id:uid('h'), t:text.trim(), done:false});
+  save(); render();
+}
+
 function render(){
   renderGauge();
   renderDailyTask();
@@ -605,6 +660,7 @@ function render(){
   renderTasksByLead();
   renderLeads();
   renderParallel();
+  renderHabits();
 }
 
 function toggleTask(ownerType, ownerId, taskId){
