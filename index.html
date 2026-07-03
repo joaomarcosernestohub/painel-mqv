@@ -335,7 +335,7 @@ let state = {
         {id:'hugo-1', t:'Follow-up', done:false},
         {id:'hugo-2', t:'Ligação', done:false}
       ]},
-    { id:'l3', name:'Marcela Zaidet', status:'Vídeo em andamento', archived:false, tasks:[
+    { id:'l3', name:'Marcela Zaiden', status:'Vídeo em andamento', archived:false, tasks:[
         {id:'marcela-1', t:'Follow-up', done:false},
         {id:'marcela-2', t:'Ligação', done:false}
       ]},
@@ -344,13 +344,13 @@ let state = {
 
 async function load(){
   try{
-    const res = await window.storage.get(STORAGE_KEY);
-    if(res && res.value){ state = JSON.parse(res.value); }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ state = JSON.parse(raw); }
   }catch(e){ /* first run, use defaults */ }
   render();
 }
 async function save(){
-  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state)); }catch(e){ console.error('storage error', e); }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ console.error('storage error', e); }
 }
 
 function fmtMoney(n){ return 'R$ ' + Number(n).toLocaleString('pt-BR'); }
