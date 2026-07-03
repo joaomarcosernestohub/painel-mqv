@@ -125,7 +125,7 @@
     content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-size:12px; color:#fff; font-weight:800;
   }
-  .task-row span.txt{font-size:13.5px; flex:1;}
+  .task-row span.txt{font-size:13.5px; flex:1; cursor:pointer;}
   .task-row.done span.txt{color:var(--gray); text-decoration:line-through;}
   .task-row .star{font-size:15px; padding:2px 4px; cursor:pointer; color:var(--line);}
   .task-row .star.active{color:var(--red);}
@@ -318,6 +318,7 @@ let state = {
     {id:'pp-3', t:'Sou eu nas Vendas — fim de semana', done:false}
   ],
   habitsDate: null,
+  workoutToday: '',
   habits: [
     {id:'h1', t:'Acordar cedo', done:false},
     {id:'h2', t:'Ler um capítulo de Provérbios', done:false},
@@ -325,7 +326,7 @@ let state = {
     {id:'h4', t:'Treino / corrida do dia', done:false},
     {id:'h5', t:'Revisar a agenda do dia', done:false},
     {id:'h6', t:'Dieta carnívora', done:false},
-    {id:'h7', t:'Dormir 10 horas', done:false}
+    {id:'h7', t:'Dormir até 22h', done:false}
   ],
   projects: [
     { id:'mqv', name:'MQV', tag:'Marketing que Vende · empresa própria', metricLabel:'reuniões de venda / dia', metricGoal:2, mrr:0,
@@ -503,10 +504,18 @@ function taskRowHtml(ownerType, owner, t){
   return `
     <div class="task-row ${t.done?'done':''}">
       <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${ownerType}','${owner.id}','${t.id}')">
-      <span class="txt">${t.t}</span>
+      <span class="txt" onclick="editTaskText('${ownerType}','${owner.id}','${t.id}')">${t.t}</span>
       <span class="star ${isDaily?'active':''}" onclick="setDailyTask('${ownerType}','${owner.id}','${t.id}')">★</span>
       <span class="del" onclick="delTask('${ownerType}','${owner.id}','${t.id}')">×</span>
     </div>`;
+}
+function editTaskText(ownerType, ownerId, taskId){
+  const owner = getOwner(ownerType, ownerId);
+  const t = owner.tasks.find(t=>t.id===taskId);
+  const val = prompt('Editar tarefa:', t.t);
+  if(val===null || !val.trim()) return;
+  t.t = val.trim();
+  save(); render();
 }
 
 function renderTasksByProject(){
@@ -603,9 +612,16 @@ function renderParallel(){
   wrap.innerHTML = state.parallelProjects.map(t=>`
     <div class="task-row ${t.done?'done':''}">
       <input type="checkbox" ${t.done?'checked':''} onchange="toggleParallel('${t.id}')">
-      <span class="txt">${t.t}</span>
+      <span class="txt" onclick="editParallelText('${t.id}')">${t.t}</span>
       <span class="del" onclick="delParallel('${t.id}')">×</span>
     </div>`).join('') || '<div class="empty">Nenhum tópico ainda.</div>';
+}
+function editParallelText(id){
+  const t = state.parallelProjects.find(t=>t.id===id);
+  const val = prompt('Editar tópico:', t.t);
+  if(val===null || !val.trim()) return;
+  t.t = val.trim();
+  save(); render();
 }
 function toggleParallel(id){
   const t = state.parallelProjects.find(t=>t.id===id);
@@ -625,18 +641,38 @@ function resetHabitsIfNewDay(){
   const today = new Date().toISOString().slice(0,10);
   if(state.habitsDate !== today){
     state.habits.forEach(h=>h.done=false);
+    state.workoutToday = '';
     state.habitsDate = today;
   }
 }
 function renderHabits(){
   resetHabitsIfNewDay();
   const wrap = document.getElementById('habitList');
-  wrap.innerHTML = state.habits.map(h=>`
-    <div class="task-row ${h.done?'done':''}">
+  wrap.innerHTML = state.habits.map(h=>{
+    const isTreino = h.id==='h4';
+    return `
+    <div class="task-row ${h.done?'done':''}" style="${isTreino?'align-items:flex-start;':''}">
       <input type="checkbox" ${h.done?'checked':''} onchange="toggleHabit('${h.id}')">
-      <span class="txt">${h.t}</span>
+      <span class="txt" onclick="editHabitText('${h.id}')" style="${isTreino?'display:block;':''}">
+        ${h.t}
+        ${isTreino ? `<div onclick="event.stopPropagation(); editWorkoutToday();" style="font-size:11.5px; color:${state.workoutToday?'var(--green)':'var(--gray)'}; margin-top:3px; font-weight:500;">${state.workoutToday ? state.workoutToday : 'toque pra definir o treino de hoje'}</div>` : ''}
+      </span>
       <span class="del" onclick="delHabit('${h.id}')">×</span>
-    </div>`).join('') || '<div class="empty">Nenhum hábito ainda.</div>';
+    </div>`;
+  }).join('') || '<div class="empty">Nenhum hábito ainda.</div>';
+}
+function editHabitText(id){
+  const h = state.habits.find(h=>h.id===id);
+  const val = prompt('Editar hábito:', h.t);
+  if(val===null || !val.trim()) return;
+  h.t = val.trim();
+  save(); render();
+}
+function editWorkoutToday(){
+  const val = prompt('Treino de hoje:', state.workoutToday || '');
+  if(val===null) return;
+  state.workoutToday = val.trim();
+  save(); render();
 }
 function toggleHabit(id){
   const h = state.habits.find(h=>h.id===id);
