@@ -278,6 +278,12 @@
       <button onclick="const i=document.getElementById('newHabit'); addHabit(i.value); i.value='';">+</button>
     </div>
   </div>
+
+  <!-- TREINOS -->
+  <div class="view" id="view-treinos">
+    <div class="section-title">Rotina de treinos</div>
+    <div id="workoutList"></div>
+  </div>
 </main>
 
 <nav class="bottom">
@@ -301,6 +307,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="#8d8d92" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M9 12l2 2 4-4"/></svg>
     Checklist
   </button>
+  <button data-view="treinos" onclick="switchView('treinos')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#8d8d92" stroke-width="2"><path d="M6.5 6.5l11 11M4 9l3-3M17 20l3-3M2 11l2-2 3 3-2 2zM17 8l2-2 3 3-2 2zM7 20l-2-2 3-3 2 2zM14 5l2-2 3 3-2 2z"/></svg>
+    Treinos
+  </button>
 </nav>
 
 <script>
@@ -319,6 +329,15 @@ let state = {
   ],
   habitsDate: null,
   workoutToday: '',
+  workouts: {
+    seg:[{id:'seg-1', t:'Treino A', done:false}],
+    ter:[{id:'ter-1', t:'Treino B', done:false}],
+    qua:[{id:'qua-1', t:'Corrida', done:false}],
+    qui:[{id:'qui-1', t:'Treino A', done:false}],
+    sex:[{id:'sex-1', t:'Treino B', done:false}],
+    sab:[{id:'sab-1', t:'Corrida ou descanso ativo', done:false}],
+    dom:[{id:'dom-1', t:'Descanso', done:false}]
+  },
   habits: [
     {id:'h1', t:'Acordar cedo', done:false},
     {id:'h2', t:'Ler um capítulo de Provérbios', done:false},
@@ -370,7 +389,11 @@ let state = {
 async function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){ state = JSON.parse(raw); }
+    if(raw){
+      const saved = JSON.parse(raw);
+      state = Object.assign({}, state, saved);
+      if(!state.workouts) state.workouts = {seg:[],ter:[],qua:[],qui:[],sex:[],sab:[],dom:[]};
+    }
   }catch(e){ /* first run, use defaults */ }
   render();
 }
@@ -688,6 +711,54 @@ function addHabit(text){
   save(); render();
 }
 
+const WORKOUT_DAYS = [['seg','Segunda'],['ter','Terça'],['qua','Quarta'],['qui','Quinta'],['sex','Sexta'],['sab','Sábado'],['dom','Domingo']];
+
+function renderWorkouts(){
+  const wrap = document.getElementById('workoutList');
+  const todayIdx = (new Date().getDay()+6)%7; // 0=segunda
+  wrap.innerHTML = WORKOUT_DAYS.map(([key,label], i)=>{
+    const items = state.workouts[key] || [];
+    const isToday = i===todayIdx;
+    return `
+    <div class="task-group" style="${isToday?'border-color:var(--red);':''}">
+      <div class="task-group-head">
+        <div class="task-group-title" style="${isToday?'':'color:var(--white);'}">${label}</div>
+        ${isToday?'<div class="task-group-sub" style="color:var(--red);">HOJE</div>':''}
+      </div>
+      ${items.map(t=>`
+        <div class="task-row ${t.done?'done':''}">
+          <input type="checkbox" ${t.done?'checked':''} onchange="toggleWorkout('${key}','${t.id}')">
+          <span class="txt" onclick="editWorkoutText('${key}','${t.id}')">${t.t}</span>
+          <span class="del" onclick="delWorkout('${key}','${t.id}')">×</span>
+        </div>`).join('') || '<div class="empty">Sem treino cadastrado</div>'}
+      <div class="add-task-row">
+        <input placeholder="Novo exercício..." onkeydown="if(event.key==='Enter'){addWorkout('${key}', this.value); this.value='';}">
+        <button onclick="const i=this.previousElementSibling; addWorkout('${key}', i.value); i.value='';">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleWorkout(day, id){
+  const t = state.workouts[day].find(t=>t.id===id);
+  t.done = !t.done; save(); render();
+}
+function delWorkout(day, id){
+  state.workouts[day] = state.workouts[day].filter(t=>t.id!==id);
+  save(); render();
+}
+function addWorkout(day, text){
+  if(!text || !text.trim()) return;
+  state.workouts[day].push({id:uid('w'), t:text.trim(), done:false});
+  save(); render();
+}
+function editWorkoutText(day, id){
+  const t = state.workouts[day].find(t=>t.id===id);
+  const val = prompt('Editar exercício:', t.t);
+  if(val===null || !val.trim()) return;
+  t.t = val.trim();
+  save(); render();
+}
+
 function render(){
   renderGauge();
   renderDailyTask();
@@ -697,6 +768,7 @@ function render(){
   renderLeads();
   renderParallel();
   renderHabits();
+  renderWorkouts();
 }
 
 function toggleTask(ownerType, ownerId, taskId){
