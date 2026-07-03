@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Painel MQV">
+<meta name="theme-color" content="#0a0a0a">
+<title>Painel de Bordo — MQV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#0a0a0a;
+    --panel:#151516;
+    --panel-2:#1d1d1f;
+    --line:#2a2a2c;
+    --red:#d4001a;
+    --red-dim:#5c0611;
+    --white:#f5f5f2;
+    --gray:#8d8d92;
+    --green:#3cb26f;
+    --amber:#e0a326;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:var(--black);
+    color:var(--white);
+    font-family:'Inter',sans-serif;
+    overscroll-behavior-y:contain;
+    padding-bottom:84px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Bebas Neue',sans-serif; letter-spacing:0.5px;}
+
+  /* ---------- HEADER / GAUGE ---------- */
+  header{
+    padding:22px 20px 18px;
+    background:radial-gradient(120% 100% at 50% -10%, #1a1a1c 0%, var(--black) 70%);
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{font-size:11px; letter-spacing:2.5px; color:var(--red); text-transform:uppercase; font-weight:700;}
+  .h-title{font-size:34px; line-height:1; margin-top:4px;}
+
+  .gauge-wrap{display:flex; align-items:center; gap:18px; margin-top:18px;}
+  .gauge-num{flex:1;}
+  .gauge-num .big{font-family:'Bebas Neue'; font-size:44px; line-height:1; color:var(--white);}
+  .gauge-num .sub{font-size:12px; color:var(--gray); margin-top:2px;}
+  svg#gauge{flex-shrink:0;}
+
+  /* ---------- SECTIONS ---------- */
+  main{padding:18px 16px 8px;}
+  .section-title{
+    font-size:13px; text-transform:uppercase; letter-spacing:1.5px;
+    color:var(--gray); font-weight:700; margin:22px 4px 10px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-title span.count{color:var(--red); font-family:'Bebas Neue'; font-size:15px; letter-spacing:0;}
+
+  /* ---------- DAILY TASK CARD ---------- */
+  .daily-card{
+    background:linear-gradient(135deg, #22060a 0%, var(--panel) 60%);
+    border:1px solid var(--red); border-radius:12px; padding:16px;
+    display:flex; align-items:flex-start; gap:12px;
+  }
+  .daily-flag{font-size:20px; flex-shrink:0; line-height:1.1;}
+  .daily-body{flex:1;}
+  .daily-eyebrow{font-size:10px; color:var(--red); text-transform:uppercase; letter-spacing:1.5px; font-weight:800;}
+  .daily-owner{font-size:10.5px; color:var(--gray); margin-top:5px;}
+  .daily-text{font-size:16px; font-weight:700; margin-top:3px;}
+  .daily-text.done{color:var(--gray); text-decoration:line-through;}
+  .daily-check{
+    appearance:none; width:22px; height:22px; border-radius:6px; flex-shrink:0;
+    border:1.5px solid var(--red); position:relative; cursor:pointer; margin-top:1px;
+  }
+  .daily-check:checked{background:var(--red);}
+  .daily-check:checked::after{content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; font-weight:800;}
+
+  /* ---------- PROJECT OVERVIEW CARDS (painel) ---------- */
+  .projects{display:flex; flex-direction:column; gap:10px;}
+  .project-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--red);
+    border-radius:10px;
+    padding:14px 14px 12px;
+  }
+  .project-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .project-name{font-family:'Bebas Neue'; font-size:20px; letter-spacing:0.5px; line-height:1; cursor:pointer; border-bottom:1px dashed transparent;}
+  .project-name:active{border-bottom-color:var(--red);}
+  .project-tag{font-size:10px; color:var(--gray); text-transform:uppercase; letter-spacing:1px; margin-top:3px;}
+  .badges{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+  .metric-pill{
+    background:var(--panel-2); border:1px solid var(--line);
+    border-radius:20px; padding:5px 10px; font-size:11px; font-weight:600; color:var(--white);
+    white-space:nowrap;
+  }
+  .metric-pill b{color:var(--red); font-weight:800;}
+  .metric-pill.mrr{border-color:#1f4a30;}
+  .metric-pill.mrr b{color:var(--green);}
+  .project-progress-row{margin-top:10px;}
+  .bar-bg{background:var(--panel-2); height:6px; border-radius:4px; overflow:hidden;}
+  .bar-fill{height:100%; background:linear-gradient(90deg, var(--red-dim), var(--red)); border-radius:4px;}
+  .progress-label{display:flex; justify-content:space-between; font-size:10.5px; color:var(--gray); margin-top:5px;}
+
+  /* ---------- TASK GROUPS (aba tarefas) ---------- */
+  .task-group{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:12px 14px; margin-bottom:10px;
+  }
+  .task-group-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px;}
+  .task-group-title{font-family:'Bebas Neue'; font-size:17px; color:var(--red);}
+  .task-group-sub{font-size:10px; color:var(--gray); text-transform:uppercase; letter-spacing:0.5px;}
+
+  /* ---------- TASK ROW ---------- */
+  .task-row{display:flex; align-items:center; gap:9px; padding:7px 0;}
+  .task-row input[type=checkbox]{
+    appearance:none; width:18px; height:18px; border-radius:5px;
+    border:1.5px solid var(--gray); flex-shrink:0; position:relative; cursor:pointer;
+  }
+  .task-row input[type=checkbox]:checked{background:var(--red); border-color:var(--red);}
+  .task-row input[type=checkbox]:checked::after{
+    content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:12px; color:#fff; font-weight:800;
+  }
+  .task-row span.txt{font-size:13.5px; flex:1;}
+  .task-row.done span.txt{color:var(--gray); text-decoration:line-through;}
+  .task-row .star{font-size:15px; padding:2px 4px; cursor:pointer; color:var(--line);}
+  .task-row .star.active{color:var(--red);}
+  .task-row .del{color:var(--gray); font-size:16px; padding:2px 4px; cursor:pointer;}
+  .add-task-row{display:flex; gap:8px; margin-top:6px;}
+  .add-task-row input{
+    flex:1; background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; color:var(--white); font-size:13px; font-family:'Inter';
+  }
+  .add-task-row button{
+    background:var(--red); color:#fff; border:none; border-radius:8px; padding:0 14px;
+    font-family:'Bebas Neue'; font-size:14px; letter-spacing:0.5px;
+  }
+
+  /* ---------- LEADS ---------- */
+  .lead-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:13px 14px; margin-bottom:8px;
+  }
+  .lead-top{display:flex; align-items:center; gap:12px;}
+  .lead-avatar{
+    width:38px; height:38px; border-radius:50%; background:var(--red-dim);
+    display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue';
+    font-size:16px; color:var(--white); flex-shrink:0; border:1px solid var(--red);
+  }
+  .lead-info{flex:1;}
+  .lead-name{font-size:14.5px; font-weight:700; cursor:pointer; border-bottom:1px dashed transparent;}
+  .lead-name:active{border-bottom-color:var(--red);}
+  .lead-status{font-size:11px; color:var(--gray); margin-top:2px;}
+  .status-dot{width:7px; height:7px; border-radius:50%; background:var(--amber); display:inline-block; margin-right:5px;}
+  .lead-del{color:var(--gray); font-size:18px; padding:4px 6px;}
+  .lead-tasks{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);}
+  .add-lead-row{display:flex; gap:8px; margin-top:2px;}
+  .add-lead-row input{
+    flex:1; background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px; color:var(--white); font-size:13.5px; font-family:'Inter';
+  }
+  .add-lead-row button{
+    background:var(--panel-2); color:var(--red); border:1px solid var(--red); border-radius:8px; padding:0 16px;
+    font-family:'Bebas Neue'; font-size:14px;
+  }
+
+  .empty{color:var(--gray); font-size:12.5px; padding:14px 4px; text-align:center;}
+
+  /* ---------- BOTTOM NAV ---------- */
+  nav.bottom{
+    position:fixed; bottom:0; left:0; right:0;
+    background:rgba(10,10,10,0.92); backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);
+    display:flex; padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+    z-index:50;
+  }
+  nav.bottom button{
+    flex:1; background:none; border:none; color:var(--gray); font-family:'Inter';
+    font-size:10.5px; font-weight:600; padding:6px 0 2px; display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  nav.bottom button svg{width:20px; height:20px;}
+  nav.bottom button.active{color:var(--red);}
+  nav.bottom button.active svg{stroke:var(--red);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .goal-edit{font-size:10px; color:var(--gray); text-decoration:underline; margin-top:8px; cursor:pointer; display:inline-block;}
+
+  ::selection{background:var(--red); color:#fff;}
+
+  /* ---------- MRR STRIP ---------- */
+  .mrr-strip{
+    display:flex; gap:8px; margin-top:16px; overflow-x:auto; padding-bottom:2px;
+  }
+  .mrr-chip{
+    flex-shrink:0; background:var(--panel); border:1px solid var(--line);
+    border-radius:10px; padding:8px 12px; min-width:96px;
+  }
+  .mrr-chip .name{font-size:10px; color:var(--gray); text-transform:uppercase; letter-spacing:0.5px;}
+  .mrr-chip .val{font-family:'Bebas Neue'; font-size:17px; color:var(--white); margin-top:2px;}
+  .mrr-chip .val b{color:var(--green);}
+  .falta-box{
+    margin-top:12px; background:var(--panel-2); border:1px dashed var(--red);
+    border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .falta-box .label{font-size:11px; color:var(--gray); text-transform:uppercase; letter-spacing:1px;}
+  .falta-box .value{font-family:'Bebas Neue'; font-size:20px; color:var(--red);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Painel de Bordo</div>
+  <h1 class="h-title">Motor de Vendas</h1>
+  <div class="gauge-wrap">
+    <svg id="gauge" width="118" height="70" viewBox="0 0 118 70">
+      <path d="M9,65 A50,50 0 0,1 109,65" fill="none" stroke="#242426" stroke-width="10" stroke-linecap="round"/>
+      <path id="gaugeFill" d="M9,65 A50,50 0 0,1 109,65" fill="none" stroke="#d4001a" stroke-width="10" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157"/>
+    </svg>
+    <div class="gauge-num">
+      <div class="big" id="revLabel">R$ 0</div>
+      <div class="sub">de R$ <span id="goalLabel">100.000</span> · <span id="pctLabel">0%</span></div>
+      <div class="goal-edit" id="editGoal">ajustar faturamento extra</div>
+    </div>
+  </div>
+  <div class="mrr-strip" id="mrrStrip"></div>
+</header>
+
+<main>
+  <!-- PAINEL -->
+  <div class="view active" id="view-painel">
+    <div class="section-title">Tarefa do dia</div>
+    <div id="dailyTaskWrap"></div>
+
+    <div class="section-title">Seus clientes <span class="count" id="projCount">0</span></div>
+    <div class="projects" id="projList"></div>
+  </div>
+
+  <!-- TAREFAS -->
+  <div class="view" id="view-tarefas">
+    <div class="section-title">Por cliente</div>
+    <div id="tasksByProject"></div>
+    <div class="section-title">Por lead</div>
+    <div id="tasksByLead"></div>
+  </div>
+
+  <!-- LEADS -->
+  <div class="view" id="view-leads">
+    <div class="section-title">Leads em andamento <span class="count" id="leadCount">0</span></div>
+    <div id="leadList"></div>
+    <div class="add-lead-row">
+      <input id="newLeadName" placeholder="Nome do lead...">
+      <button onclick="addLead()">+</button>
+    </div>
+  </div>
+
+  <!-- PROJETOS PARALELOS -->
+  <div class="view" id="view-paralelos">
+    <div class="section-title">Projetos paralelos</div>
+    <div class="task-group" id="parallelList"></div>
+    <div class="add-task-row" style="margin-top:2px;">
+      <input id="newParallel" placeholder="Novo tópico..." onkeydown="if(event.key==='Enter'){addParallel(this.value); this.value='';}">
+      <button onclick="const i=document.getElementById('newParallel'); addParallel(i.value); i.value='';">+</button>
+    </div>
+  </div>
+</main>
+
+<nav class="bottom">
+  <button class="active" data-view="painel" onclick="switchView('painel')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#8d8d92" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+    Painel
+  </button>
+  <button data-view="tarefas" onclick="switchView('tarefas')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#8d8d92" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Tarefas
+  </button>
+  <button data-view="leads" onclick="switchView('leads')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#8d8d92" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg>
+    Leads
+  </button>
+  <button data-view="paralelos" onclick="switchView('paralelos')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#8d8d92" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    Paralelos
+  </button>
+</nav>
+
+<script>
+const STORAGE_KEY = 'mqv-dashboard-v4';
+
+function uid(prefix){ return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+let state = {
+  goal: 100000,
+  extraRevenue: 0,
+  dailyTask: null, // {ownerType:'project'|'lead', ownerId, taskId}
+  parallelProjects: [
+    {id:'pp-1', t:'Slides da aula com Marcelo Bueno — fim de semana', done:false},
+    {id:'pp-2', t:'Pós-graduação da FROMS — fim de semana', done:false},
+    {id:'pp-3', t:'Sou eu nas Vendas — fim de semana', done:false}
+  ],
+  projects: [
+    { id:'mqv', name:'MQV', tag:'Marketing que Vende · empresa própria', metricLabel:'reuniões de venda / dia', metricGoal:2, mrr:0,
+      tasks:[
+        {id:'mqv-1', t:'Marcar reunião de venda (todo dia)', done:false},
+        {id:'mqv-2', t:'Produzir conteúdo', done:false}
+      ]},
+    { id:'avaliativa', name:'Avaliativa', tag:'Cliente · conteúdo', metricLabel:'publicações / mês', metricGoal:6, mrr:7500,
+      tasks:[
+        {id:'av-1', t:'Campanha de Planejamento', done:false},
+        {id:'av-2', t:'Disparo da campanha', done:false}
+      ] },
+    { id:'thiago', name:'Thiago Concer', tag:'Cliente · RD Station', metricLabel:'alcance / trimestre', metricGoal:600000, mrr:5000,
+      tasks:[
+        {id:'th-1', t:'4 posts RD — segunda', done:false},
+        {id:'th-2', t:'Revisar campanhas RD', done:false}
+      ] },
+    { id:'malavota', name:'Malavota', tag:'Cliente · tráfego pago + gestão de projetos', metricLabel:'gerado em tráfego / mês', metricGoal:100000, metricPrefix:'R$', mrr:5000,
+      tasks:[
+        {id:'mv-1', t:'Acompanhar projetos em andamento', done:false},
+        {id:'mv-2', t:'Checar performance', done:false}
+      ]},
+    { id:'salesclube', name:'Sales Clube', tag:'Cliente · gestão de tráfego', metricLabel:'reunião de venda / dia', metricGoal:1, mrr:5000,
+      tasks:[
+        {id:'sc-1', t:'Acompanhar campanhas', done:false}
+      ] },
+  ],
+  leads: [
+    { id:'l1', name:'Bruno Hora', status:'Perdido', archived:true, tasks:[] },
+    { id:'l2', name:'Hugo', status:'Vídeo em andamento', archived:false, tasks:[
+        {id:'hugo-1', t:'Follow-up', done:false},
+        {id:'hugo-2', t:'Ligação', done:false}
+      ]},
+    { id:'l3', name:'Marcela Zaidet', status:'Vídeo em andamento', archived:false, tasks:[
+        {id:'marcela-1', t:'Follow-up', done:false},
+        {id:'marcela-2', t:'Ligação', done:false}
+      ]},
+  ]
+};
+
+async function load(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY);
+    if(res && res.value){ state = JSON.parse(res.value); }
+  }catch(e){ /* first run, use defaults */ }
+  render();
+}
+async function save(){
+  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state)); }catch(e){ console.error('storage error', e); }
+}
+
+function fmtMoney(n){ return 'R$ ' + Number(n).toLocaleString('pt-BR'); }
+function fmtCompact(n){
+  if(n>=1000) return (n/1000).toLocaleString('pt-BR',{maximumFractionDigits:1}) + 'k';
+  return n;
+}
+
+function totalMRR(){
+  return state.projects.reduce((sum,p)=> sum + (p.mrr||0), 0);
+}
+
+function renderGauge(){
+  const mrr = totalMRR();
+  const total = mrr + (state.extraRevenue||0);
+  const pct = Math.min(100, Math.round((total/state.goal)*100));
+  const circumference = 157;
+  const offset = circumference - (circumference*pct/100);
+  document.getElementById('gaugeFill').style.strokeDashoffset = offset;
+  document.getElementById('revLabel').textContent = fmtMoney(total);
+  document.getElementById('goalLabel').textContent = state.goal.toLocaleString('pt-BR');
+  document.getElementById('pctLabel').textContent = pct + '%';
+
+  const strip = document.getElementById('mrrStrip');
+  strip.innerHTML = state.projects.filter(p=>p.mrr>0).map(p=>`
+    <div class="mrr-chip">
+      <div class="name">${p.name}</div>
+      <div class="val"><b>R$${(p.mrr/1000).toLocaleString('pt-BR')}k</b>/mês</div>
+    </div>`).join('') +
+    `<div class="mrr-chip" style="border-color:var(--red);">
+      <div class="name">Recorrência total</div>
+      <div class="val">R$${(mrr/1000).toLocaleString('pt-BR')}k/mês</div>
+    </div>`;
+
+  const falta = Math.max(0, state.goal - total);
+  let faltaBox = document.getElementById('faltaBox');
+  if(!faltaBox){
+    faltaBox = document.createElement('div');
+    faltaBox.id = 'faltaBox';
+    faltaBox.className = 'falta-box';
+    document.querySelector('header').appendChild(faltaBox);
+  }
+  faltaBox.innerHTML = falta>0
+    ? `<span class="label">Falta pra meta</span><span class="value">${fmtMoney(falta)}</span>`
+    : `<span class="label">Meta batida 🚀</span><span class="value">+${fmtMoney(total-state.goal)}</span>`;
+}
+
+/* ---------- OWNER HELPERS ---------- */
+function getOwner(ownerType, ownerId){
+  return ownerType==='project'
+    ? state.projects.find(p=>p.id===ownerId)
+    : state.leads.find(l=>l.id===ownerId);
+}
+
+/* Escolhe a tarefa do dia: a marcada manualmente (se ainda pendente),
+   senão a inteligência: prioriza tarefas de leads (follow-up/ligação, mais urgentes
+   por serem prazo-sensíveis) e, no empate, a primeira tarefa pendente da MQV. */
+function resolveDailyTask(){
+  if(state.dailyTask){
+    const owner = getOwner(state.dailyTask.ownerType, state.dailyTask.ownerId);
+    const task = owner && owner.tasks.find(t=>t.id===state.dailyTask.taskId);
+    if(task && !task.done) return {task, owner, ownerType:state.dailyTask.ownerType, manual:true};
+  }
+  for(const l of state.leads){
+    if(l.archived) continue;
+    const t = l.tasks.find(t=>!t.done);
+    if(t) return {task:t, owner:l, ownerType:'lead', manual:false};
+  }
+  for(const p of state.projects){
+    const t = p.tasks.find(t=>!t.done);
+    if(t) return {task:t, owner:p, ownerType:'project', manual:false};
+  }
+  return null;
+}
+
+function renderDailyTask(){
+  const wrap = document.getElementById('dailyTaskWrap');
+  const r = resolveDailyTask();
+  if(!r){
+    wrap.innerHTML = '<div class="empty">Nenhuma tarefa pendente. 🎉</div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="daily-card">
+      <input type="checkbox" class="daily-check" ${r.task.done?'checked':''} onchange="toggleTask('${r.ownerType}','${r.owner.id}','${r.task.id}')">
+      <div class="daily-body">
+        <div class="daily-eyebrow">${r.manual ? 'Prioridade marcada' : 'Sugestão do painel'}</div>
+        <div class="daily-owner">${r.owner.name}</div>
+        <div class="daily-text ${r.task.done?'done':''}">${r.task.t}</div>
+      </div>
+    </div>`;
+}
+
+function renderProjects(){
+  const wrap = document.getElementById('projList');
+  document.getElementById('projCount').textContent = state.projects.length;
+  wrap.innerHTML = '';
+  state.projects.forEach(p=>{
+    const done = p.tasks.filter(t=>t.done).length;
+    const total = p.tasks.length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    card.innerHTML = `
+      <div class="project-top">
+        <div>
+          <div class="project-name" onclick="editProjectName('${p.id}')">${p.name}</div>
+          <div class="project-tag">${p.tag}</div>
+        </div>
+      </div>
+      <div class="badges">
+        ${p.metricGoal!==null ? `<div class="metric-pill"><b>Meta:</b> ${p.metricPrefix||''}${fmtCompact(p.metricGoal)} ${p.metricLabel}</div>` : `<div class="metric-pill">${p.metricLabel}</div>`}
+        ${p.mrr>0 ? `<div class="metric-pill mrr"><b>R$${(p.mrr/1000).toLocaleString('pt-BR')}k</b>/mês</div>` : ''}
+      </div>
+      <div class="project-progress-row">
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="progress-label"><span>${done}/${total} tarefas hoje</span><span>${pct}%</span></div>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+function taskRowHtml(ownerType, owner, t){
+  const isDaily = state.dailyTask && state.dailyTask.ownerType===ownerType && state.dailyTask.ownerId===owner.id && state.dailyTask.taskId===t.id;
+  return `
+    <div class="task-row ${t.done?'done':''}">
+      <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${ownerType}','${owner.id}','${t.id}')">
+      <span class="txt">${t.t}</span>
+      <span class="star ${isDaily?'active':''}" onclick="setDailyTask('${ownerType}','${owner.id}','${t.id}')">★</span>
+      <span class="del" onclick="delTask('${ownerType}','${owner.id}','${t.id}')">×</span>
+    </div>`;
+}
+
+function renderTasksByProject(){
+  const wrap = document.getElementById('tasksByProject');
+  wrap.innerHTML = '';
+  state.projects.forEach(p=>{
+    const block = document.createElement('div');
+    block.className = 'task-group';
+    block.innerHTML = `
+      <div class="task-group-head">
+        <div class="task-group-title" style="cursor:pointer;" onclick="editProjectName('${p.id}')">${p.name}</div>
+        <div class="task-group-sub">${p.tag}</div>
+      </div>
+      ${p.tasks.map(t=>taskRowHtml('project', p, t)).join('') || '<div class="empty">Sem tarefas</div>'}
+      <div class="add-task-row">
+        <input placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter'){addTask('project','${p.id}', this.value); this.value='';}">
+        <button onclick="const i=this.previousElementSibling; addTask('project','${p.id}', i.value); i.value='';">+</button>
+      </div>`;
+    wrap.appendChild(block);
+  });
+}
+
+function renderTasksByLead(){
+  const wrap = document.getElementById('tasksByLead');
+  wrap.innerHTML = '';
+  const active = state.leads.filter(l=>!l.archived);
+  if(active.length===0){ wrap.innerHTML = '<div class="empty">Nenhum lead ativo.</div>'; return; }
+  active.forEach(l=>{
+    const block = document.createElement('div');
+    block.className = 'task-group';
+    block.innerHTML = `
+      <div class="task-group-head">
+        <div class="task-group-title" style="cursor:pointer;" onclick="editLeadName('${l.id}')">${l.name}</div>
+        <div class="task-group-sub">${l.status}</div>
+      </div>
+      ${l.tasks.map(t=>taskRowHtml('lead', l, t)).join('') || '<div class="empty">Sem tarefas</div>'}
+      <div class="add-task-row">
+        <input placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter'){addTask('lead','${l.id}', this.value); this.value='';}">
+        <button onclick="const i=this.previousElementSibling; addTask('lead','${l.id}', i.value); i.value='';">+</button>
+      </div>`;
+    wrap.appendChild(block);
+  });
+}
+
+function renderLeads(){
+  const listFull = document.getElementById('leadList');
+  const active = state.leads.filter(l=>!l.archived);
+  const archived = state.leads.filter(l=>l.archived);
+  document.getElementById('leadCount').textContent = active.length;
+
+  function leadCardHtml(l, isArchived){
+    const done = l.tasks.filter(t=>t.done).length;
+    const total = l.tasks.length;
+    return `
+    <div class="lead-card">
+      <div class="lead-top">
+        <div class="lead-avatar">${l.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+        <div class="lead-info">
+          <div class="lead-name" onclick="editLeadName('${l.id}')">${l.name}</div>
+          <div class="lead-status"><span class="status-dot" style="${isArchived?'background:var(--gray);':''}"></span>${l.status}${total?` · ${done}/${total} tarefas`:''}</div>
+        </div>
+        ${isArchived
+          ? `<div class="lead-del" title="restaurar" onclick="restoreLead('${l.id}')">↺</div>`
+          : `<div class="lead-del" title="marcar como perdido" onclick="archiveLead('${l.id}')">×</div>`}
+      </div>
+      ${isArchived ? '' : `
+      <div class="lead-tasks">
+        ${l.tasks.map(t=>taskRowHtml('lead', l, t)).join('') || '<div class="empty">Sem tarefas ainda</div>'}
+        <div class="add-task-row">
+          <input placeholder="Nova tarefa..." onkeydown="if(event.key==='Enter'){addTask('lead','${l.id}', this.value); this.value='';}">
+          <button onclick="const i=this.previousElementSibling; addTask('lead','${l.id}', i.value); i.value='';">+</button>
+        </div>
+      </div>`}
+    </div>`;
+  }
+
+  listFull.innerHTML = active.length
+    ? active.map(l=>leadCardHtml(l,false)).join('')
+    : '<div class="empty">Nenhum lead ativo. Adicione um abaixo.</div>';
+
+  let histBlock = document.getElementById('leadHistoryBlock');
+  if(!histBlock){
+    histBlock = document.createElement('div');
+    histBlock.id = 'leadHistoryBlock';
+    document.getElementById('view-leads').insertBefore(histBlock, document.querySelector('#view-leads .add-lead-row'));
+  }
+  histBlock.innerHTML = archived.length
+    ? `<div class="section-title">Histórico <span class="count">${archived.length}</span></div>` + archived.map(l=>leadCardHtml(l,true)).join('')
+    : '';
+}
+
+function renderParallel(){
+  const wrap = document.getElementById('parallelList');
+  wrap.innerHTML = state.parallelProjects.map(t=>`
+    <div class="task-row ${t.done?'done':''}">
+      <input type="checkbox" ${t.done?'checked':''} onchange="toggleParallel('${t.id}')">
+      <span class="txt">${t.t}</span>
+      <span class="del" onclick="delParallel('${t.id}')">×</span>
+    </div>`).join('') || '<div class="empty">Nenhum tópico ainda.</div>';
+}
+function toggleParallel(id){
+  const t = state.parallelProjects.find(t=>t.id===id);
+  t.done = !t.done; save(); render();
+}
+function delParallel(id){
+  state.parallelProjects = state.parallelProjects.filter(t=>t.id!==id);
+  save(); render();
+}
+function addParallel(text){
+  if(!text || !text.trim()) return;
+  state.parallelProjects.push({id:uid('pp'), t:text.trim(), done:false});
+  save(); render();
+}
+
+function render(){
+  renderGauge();
+  renderDailyTask();
+  renderProjects();
+  renderTasksByProject();
+  renderTasksByLead();
+  renderLeads();
+  renderParallel();
+}
+
+function toggleTask(ownerType, ownerId, taskId){
+  const owner = getOwner(ownerType, ownerId);
+  const t = owner.tasks.find(t=>t.id===taskId);
+  t.done = !t.done;
+  save(); render();
+}
+function delTask(ownerType, ownerId, taskId){
+  const owner = getOwner(ownerType, ownerId);
+  owner.tasks = owner.tasks.filter(t=>t.id!==taskId);
+  if(state.dailyTask && state.dailyTask.taskId===taskId) state.dailyTask = null;
+  save(); render();
+}
+function addTask(ownerType, ownerId, text){
+  if(!text || !text.trim()) return;
+  const owner = getOwner(ownerType, ownerId);
+  owner.tasks.push({id:uid('t'), t:text.trim(), done:false});
+  save(); render();
+}
+function setDailyTask(ownerType, ownerId, taskId){
+  if(state.dailyTask && state.dailyTask.taskId===taskId){
+    state.dailyTask = null; // desmarcar
+  }else{
+    state.dailyTask = {ownerType, ownerId, taskId};
+  }
+  save(); render();
+}
+function addLead(){
+  const input = document.getElementById('newLeadName');
+  const name = input.value.trim();
+  if(!name) return;
+  state.leads.push({id:uid('l'), name, status:'Em contato', tasks:[]});
+  input.value='';
+  save(); render();
+}
+function archiveLead(id){
+  const l = state.leads.find(l=>l.id===id);
+  l.archived = true; l.status = 'Perdido';
+  if(state.dailyTask && state.dailyTask.ownerType==='lead' && state.dailyTask.ownerId===id) state.dailyTask = null;
+  save(); render();
+}
+function restoreLead(id){
+  const l = state.leads.find(l=>l.id===id);
+  l.archived = false; l.status = 'Em contato';
+  save(); render();
+}
+function delLead(id){
+  state.leads = state.leads.filter(l=>l.id!==id);
+  if(state.dailyTask && state.dailyTask.ownerType==='lead' && state.dailyTask.ownerId===id) state.dailyTask = null;
+  save(); render();
+}
+
+function editProjectName(id){
+  const p = state.projects.find(p=>p.id===id);
+  const val = prompt('Nome do cliente/projeto:', p.name);
+  if(val===null || !val.trim()) return;
+  p.name = val.trim();
+  save(); render();
+}
+function editLeadName(id){
+  const l = state.leads.find(l=>l.id===id);
+  const val = prompt('Nome do lead:', l.name);
+  if(val===null || !val.trim()) return;
+  l.name = val.trim();
+  save(); render();
+}
+
+document.getElementById('editGoal').addEventListener('click', ()=>{
+  const val = prompt('Faturamento extra (pontual, fora da recorrência mensal) em R$:', state.extraRevenue);
+  if(val===null) return;
+  const n = Number(val.replace(/\D/g,''));
+  if(!isNaN(n)){ state.extraRevenue = n; save(); render(); }
+});
+
+function switchView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`nav.bottom button[data-view="${name}"]`).classList.add('active');
+}
+
+load();
+</script>
+</body>
+</html>
