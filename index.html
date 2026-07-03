@@ -30,14 +30,14 @@
     color:var(--white);
     font-family:'Inter',sans-serif;
     overscroll-behavior-y:contain;
-    padding-bottom:84px;
+    padding-bottom:110px;
     -webkit-font-smoothing:antialiased;
   }
   h1,h2,h3,.display{font-family:'Bebas Neue',sans-serif; letter-spacing:0.5px;}
 
   /* ---------- HEADER / GAUGE ---------- */
   header{
-    padding:22px 20px 18px;
+    padding:calc(22px + env(safe-area-inset-top)) 20px 18px;
     background:radial-gradient(120% 100% at 50% -10%, #1a1a1c 0%, var(--black) 70%);
     border-bottom:1px solid var(--line);
   }
