@@ -217,6 +217,7 @@
 <header>
   <div class="eyebrow">Painel de Bordo</div>
   <h1 class="h-title">Motor de Vendas</h1>
+  <div id="todayLabel" style="font-size:12px; color:var(--gray); margin-top:2px; text-transform:capitalize;"></div>
   <div class="gauge-wrap">
     <svg id="gauge" width="118" height="70" viewBox="0 0 118 70">
       <path d="M9,65 A50,50 0 0,1 109,65" fill="none" stroke="#242426" stroke-width="10" stroke-linecap="round"/>
@@ -356,12 +357,14 @@ let state = {
     { id:'avaliativa', name:'Avaliativa', tag:'Cliente · conteúdo', metricLabel:'publicações / mês', metricGoal:6, mrr:7500,
       tasks:[
         {id:'av-1', t:'Campanha de Planejamento', done:false},
-        {id:'av-2', t:'Disparo da campanha', done:false}
+        {id:'av-2', t:'Disparo da campanha', done:false},
+        {id:'av-3', t:'Aprovar mensagem no WhatsApp (disparo em massa)', done:false}
       ] },
     { id:'thiago', name:'Thiago Concer', tag:'Cliente · RD Station', metricLabel:'alcance / trimestre', metricGoal:600000, mrr:5000,
       tasks:[
         {id:'th-1', t:'4 posts RD — segunda', done:false},
-        {id:'th-2', t:'Revisar campanhas RD', done:false}
+        {id:'th-2', t:'Conferir os 4 posts RD', done:false},
+        {id:'th-3', t:'Relatório RD Station — junho', done:false}
       ] },
     { id:'malavota', name:'Malavota', tag:'Cliente · tráfego pago + gestão de projetos', metricLabel:'gerado em tráfego / mês', metricGoal:100000, metricPrefix:'R$', mrr:5000,
       tasks:[
@@ -370,7 +373,9 @@ let state = {
       ]},
     { id:'salesclube', name:'Sales Clube', tag:'Cliente · gestão de tráfego', metricLabel:'reunião de venda / dia', metricGoal:1, mrr:5000,
       tasks:[
-        {id:'sc-1', t:'Acompanhar campanhas', done:false}
+        {id:'sc-1', t:'Acompanhar campanhas', done:false},
+        {id:'sc-2', t:'Novas campanhas', done:false},
+        {id:'sc-3', t:'Gestão da equipe', done:false}
       ] },
   ],
   leads: [
@@ -386,6 +391,20 @@ let state = {
   ]
 };
 
+function patchNewTasks(){
+  const patches = [
+    ['avaliativa', 'av-3', 'Aprovar mensagem no WhatsApp (disparo em massa)'],
+    ['thiago', 'th-2', 'Conferir os 4 posts RD'],
+    ['thiago', 'th-3', 'Relatório RD Station — junho'],
+    ['salesclube', 'sc-2', 'Novas campanhas'],
+    ['salesclube', 'sc-3', 'Gestão da equipe'],
+  ];
+  patches.forEach(([projId, taskId, text])=>{
+    const p = state.projects.find(p=>p.id===projId);
+    if(p && !p.tasks.find(t=>t.id===taskId)) p.tasks.push({id:taskId, t:text, done:false});
+  });
+}
+
 async function load(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -395,6 +414,8 @@ async function load(){
       if(!state.workouts) state.workouts = {seg:[],ter:[],qua:[],qui:[],sex:[],sab:[],dom:[]};
     }
   }catch(e){ /* first run, use defaults */ }
+  patchNewTasks();
+  save();
   render();
 }
 async function save(){
@@ -759,7 +780,14 @@ function editWorkoutText(day, id){
   save(); render();
 }
 
+function renderToday(){
+  const d = new Date();
+  const label = d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+  document.getElementById('todayLabel').textContent = label;
+}
+
 function render(){
+  renderToday();
   renderGauge();
   renderDailyTask();
   renderProjects();
