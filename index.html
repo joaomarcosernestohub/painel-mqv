@@ -210,9 +210,57 @@
   }
   .falta-box .label{font-size:11px; color:var(--gray); text-transform:uppercase; letter-spacing:1px;}
   .falta-box .value{font-family:'Bebas Neue'; font-size:20px; color:var(--red);}
+
+  /* ---------- LOCK SCREEN ---------- */
+  #lockScreen{
+    position:fixed; inset:0; z-index:9999; background:var(--black);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:22px; padding:24px;
+  }
+  #lockScreen .eyebrow{font-size:11px; letter-spacing:2.5px; color:var(--red); text-transform:uppercase; font-weight:700;}
+  #lockScreen h1{font-family:'Bebas Neue'; font-size:32px;}
+  #pinDots{display:flex; gap:14px;}
+  #pinDots .dot{width:14px; height:14px; border-radius:50%; border:1.5px solid var(--line); background:transparent; transition:background .15s,border-color .15s;}
+  #pinDots .dot.filled{background:var(--red); border-color:var(--red);}
+  #pinDots.shake{animation:shake .35s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);} 20%{transform:translateX(-8px);} 40%{transform:translateX(8px);} 60%{transform:translateX(-6px);} 80%{transform:translateX(6px);}
+  }
+  #pinPad{display:grid; grid-template-columns:repeat(3,64px); gap:14px; margin-top:6px;}
+  #pinPad button{
+    width:64px; height:64px; border-radius:50%; border:1px solid var(--line);
+    background:var(--panel); color:var(--white); font-family:'Bebas Neue'; font-size:24px;
+  }
+  #pinPad button:active{background:var(--panel-2);}
+  #pinPad button.wide{grid-column:span 1;}
+  #pinError{color:var(--red); font-size:12px; height:14px; letter-spacing:.5px;}
+  #syncBadge{
+    position:fixed; top:calc(10px + env(safe-area-inset-top)); right:12px; z-index:500;
+    font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--gray);
+    background:var(--panel); border:1px solid var(--line); padding:4px 9px; border-radius:20px;
+    display:flex; align-items:center; gap:5px;
+  }
+  #syncBadge .sdot{width:6px; height:6px; border-radius:50%; background:var(--gray);}
+  #syncBadge.ok .sdot{background:var(--green);}
+  #syncBadge.err .sdot{background:var(--red);}
 </style>
 </head>
 <body>
+
+<div id="lockScreen">
+  <div class="eyebrow">Painel de Bordo</div>
+  <h1>Digite seu PIN</h1>
+  <div id="pinDots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+  <div id="pinError">&nbsp;</div>
+  <div id="pinPad">
+    <button onclick="pinPress('1')">1</button><button onclick="pinPress('2')">2</button><button onclick="pinPress('3')">3</button>
+    <button onclick="pinPress('4')">4</button><button onclick="pinPress('5')">5</button><button onclick="pinPress('6')">6</button>
+    <button onclick="pinPress('7')">7</button><button onclick="pinPress('8')">8</button><button onclick="pinPress('9')">9</button>
+    <button style="visibility:hidden">0</button><button onclick="pinPress('0')">0</button><button onclick="pinBackspace()">⌫</button>
+  </div>
+</div>
+
+<div id="syncBadge"><span class="sdot"></span><span id="syncLabel">offline</span></div>
 
 <header>
   <div class="eyebrow">Painel de Bordo</div>
@@ -314,8 +362,104 @@
   </button>
 </nav>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 const STORAGE_KEY = 'mqv-dashboard-v4';
+
+/* ---------- FIREBASE SYNC ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDAvRL-ZPBiVlS1TilmSsZs87TN6DGHGV4",
+  authDomain: "painel-mqv.firebaseapp.com",
+  projectId: "painel-mqv",
+  storageBucket: "painel-mqv.firebasestorage.app",
+  messagingSenderId: "339203505745",
+  appId: "1:339203505745:web:ce986e1640e4f45db84270"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const docRef = db.collection('painel').doc('main');
+const CLIENT_ID = Math.random().toString(36).slice(2);
+let saveTimer = null;
+let applyingRemote = false;
+
+function setSyncBadge(mode){
+  const el = document.getElementById('syncBadge');
+  const label = document.getElementById('syncLabel');
+  el.classList.remove('ok','err');
+  if(mode==='ok'){ el.classList.add('ok'); label.textContent='sincronizado'; }
+  else if(mode==='err'){ el.classList.add('err'); label.textContent='offline'; }
+  else { label.textContent='sincronizando...'; }
+}
+
+function listenRemote(){
+  docRef.onSnapshot((snap)=>{
+    if(!snap.exists) return;
+    const data = snap.data();
+    if(data._by === CLIENT_ID) { setSyncBadge('ok'); return; } // eco da própria escrita
+    applyingRemote = true;
+    state = Object.assign({}, state, data.state);
+    if(!state.workouts) state.workouts = {seg:[],ter:[],qua:[],qui:[],sex:[],sab:[],dom:[]};
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    render();
+    applyingRemote = false;
+    setSyncBadge('ok');
+  }, (err)=>{ console.error('sync error', err); setSyncBadge('err'); });
+}
+
+function pushRemote(){
+  if(applyingRemote) return;
+  clearTimeout(saveTimer);
+  setSyncBadge('mid');
+  saveTimer = setTimeout(()=>{
+    docRef.set({ state, _by: CLIENT_ID, _at: Date.now() })
+      .then(()=> setSyncBadge('ok'))
+      .catch((e)=>{ console.error('push error', e); setSyncBadge('err'); });
+  }, 500);
+}
+
+/* ---------- PIN LOCK ---------- */
+const PIN_HASH = '1655b7ece8313e018d4a712b8fd319cda0033a82f2d6be23eb7940faa183950b';
+let pinBuffer = '';
+async function sha256(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function renderPinDots(){
+  document.querySelectorAll('#pinDots .dot').forEach((d,i)=> d.classList.toggle('filled', i < pinBuffer.length));
+}
+async function pinPress(digit){
+  if(pinBuffer.length >= 6) return;
+  pinBuffer += digit;
+  renderPinDots();
+  if(pinBuffer.length === 6){
+    const hash = await sha256(pinBuffer);
+    if(hash === PIN_HASH){
+      sessionStorage.setItem('painel-unlocked','1');
+      unlockApp();
+    } else {
+      document.getElementById('pinError').textContent = 'PIN incorreto';
+      const dots = document.getElementById('pinDots');
+      dots.classList.add('shake');
+      setTimeout(()=>{ dots.classList.remove('shake'); pinBuffer=''; renderPinDots(); }, 350);
+    }
+  }
+}
+function pinBackspace(){
+  pinBuffer = pinBuffer.slice(0,-1);
+  document.getElementById('pinError').textContent = '';
+  renderPinDots();
+}
+function unlockApp(){
+  document.getElementById('lockScreen').style.display = 'none';
+  boot();
+}
+if(sessionStorage.getItem('painel-unlocked') === '1'){
+  document.addEventListener('DOMContentLoaded', ()=>{
+    document.getElementById('lockScreen').style.display='none';
+    boot();
+  });
+}
 
 function uid(prefix){ return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
@@ -406,6 +550,7 @@ function patchNewTasks(){
 }
 
 async function load(){
+  // 1) carrega o cache local imediatamente (abre rápido, funciona offline)
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw){
@@ -415,11 +560,31 @@ async function load(){
     }
   }catch(e){ /* first run, use defaults */ }
   patchNewTasks();
-  save();
   render();
+
+  // 2) busca a versão mais recente do Firestore (fonte da verdade entre aparelhos)
+  try{
+    const snap = await docRef.get();
+    if(snap.exists && snap.data().state){
+      applyingRemote = true;
+      state = Object.assign({}, state, snap.data().state);
+      if(!state.workouts) state.workouts = {seg:[],ter:[],qua:[],qui:[],sex:[],sab:[],dom:[]};
+      patchNewTasks();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      render();
+      applyingRemote = false;
+      setSyncBadge('ok');
+    } else {
+      // primeira vez: sobe o estado local pro Firestore
+      pushRemote();
+    }
+  }catch(e){ console.error('load remote error', e); setSyncBadge('err'); }
+
+  listenRemote();
 }
 async function save(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ console.error('storage error', e); }
+  pushRemote();
 }
 
 function fmtMoney(n){ return 'R$ ' + Number(n).toLocaleString('pt-BR'); }
@@ -879,7 +1044,7 @@ function switchView(name){
   document.querySelector(`nav.bottom button[data-view="${name}"]`).classList.add('active');
 }
 
-load();
+function boot(){ load(); }
 </script>
 </body>
 </html>
